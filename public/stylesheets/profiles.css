@@ -1,0 +1,19 @@
+.btn:focus,.btn:active:focus,.btn.active:focus,
+.btn.focus,.btn:active.focus,.btn.active.focus {
+    outline: none;
+    box-shadow:none;
+}
+#img-container  {
+    padding: 20px;
+    text-align: center;
+}
+h3{
+    color: #3c423f;
+}
+#form-container{
+    margin: auto;
+}
+#loading{
+    visibility: hidden;
+    text-align: center;
+}
