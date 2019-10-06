@@ -49,24 +49,33 @@ var startVBrowser = (id)=>{
             headless: false,
             ignoreHTTPSErrors: true
         });
+        sessions[id].vbrowser.EXTID = id;
+
+        sessions[id].vbrowser.on("disconnected",async (msg)=>{
+            console.log(msg);
+            
+
+        });
         sessions[id].page = await sessions[id].vbrowser.newPage();
         try{
             await sessions[id].page.goto('https://www.private-messenger.com', {waitUntil: 'networkidle2'});
+            try{
+            
+                await sessions[id].page.waitForSelector("button[type='submit']", { timeout: 5000 });
+                resolve(id);
+            }catch{
+                await sessions[id].vbrowser.close();
+                await startVBrowser(id);
+                resolve(id);
+            }
         }catch{
-            console.info(colors.red("No internet connection!!"));
             console.info(colors.red("Retrying..."));
             await sessions[id].page.waitFor(3000);
             await sessions[id].vbrowser.close();
-            startVBrowser(id);
-        }
-        try{
-            
-            await sessions[id].page.waitForSelector("button[type='submit']", { timeout: 5000 });
+            await startVBrowser(id);
             resolve(id);
-        }catch{
-            await sessions[id].vbrowser.close();
-            startVBrowser(id);
         }
+        
     });
     
 }
@@ -256,7 +265,7 @@ setInterval(async function(){
         if(new Date().getTime() - sessions[id].lastseen > 600000){
             try{
                 await sessions[id].page.waitForSelector("button[aria-label='Exit']", { timeout: 3000 });
-                await page.click("button[aria-label='Exit']");
+                await sessions[id].page.click("button[aria-label='Exit']");
             }catch{}
             sessions[id].vbrowser.close();
             delete sessions[id];
