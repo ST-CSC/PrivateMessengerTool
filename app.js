@@ -46,15 +46,13 @@ var startVBrowser = (id)=>{
         sessions[id].vbrowser = await puppeteer.launch({
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
             //slowMo : 200,
-            headless: false,
+            headless: true,
             ignoreHTTPSErrors: true
         });
         sessions[id].vbrowser.EXTID = id;
 
-        sessions[id].vbrowser.on("disconnected",async (msg)=>{
-            console.log(msg);
-            
-
+        sessions[id].vbrowser.on("disconnected", async (msg )=>{
+            delete sessions[id];
         });
         sessions[id].page = await sessions[id].vbrowser.newPage();
         try{
@@ -133,6 +131,27 @@ var login = function(data , id){
             }
         }
     );
+}
+var getprofiles = function(){
+    settings.profilesAll = [];
+    return new Promise(
+    async (resolve,reject)=>{
+        await sessions[id].page.waitForSelector("div[ng-if='availableProfiles.length']", { timeout: 5000 });
+
+        profiles = await sessions[id].page.evaluate
+        
+        let content = await page.content();
+        var $ = cheerio.load(content);
+        $("div[ng-if='availableProfiles.length'] md-list-item button").each(function(i, element){
+            settings.profilesAll.push($(element).attr("aria-label").split("\n")[0]);
+        });
+
+        if(settings.profilesAll.length){
+            resolve();
+        }else{
+            reject();
+        }
+    }) 
 }
 
 
