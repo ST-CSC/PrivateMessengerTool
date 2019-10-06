@@ -1,12 +1,17 @@
-const socket = io('http://192.168.88.4:3000');
+const origin = window.location.origin;
+const socket = io(origin);
 socket.on('connect', () => {
     console.log("Socket connection established");
+    socket.emit("LogIn");
+    setInterval(function(){
+        socket.emit("alive");
+    }, 60000);
 });
 
-socket.on("success-login" ,()=>{
-    window.location.replace("http://192.168.88.4:3000");
+socket.on("LogIn-success" ,()=>{
+    window.location = origin;
 })
-socket.on("fail-login" ,()=>{
+socket.on("LogIn-fail" ,()=>{
     document.querySelector("#loading").style.visibility = "hidden";
     document.querySelector("#username").disabled = false;
     document.querySelector("#password").disabled = false;
@@ -21,7 +26,7 @@ login = function(){
         password:password
     }
     if(username.trim() != "" && password.trim() != ""){
-        socket.emit("try-login" , data);
+        socket.emit("LogIn" , data);
         document.querySelector("#loading").style.visibility = "visible";
         document.querySelector("#username").disabled = true;
         document.querySelector("#password").disabled = true;
@@ -30,3 +35,4 @@ login = function(){
     }
     
 }
+

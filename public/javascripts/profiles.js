@@ -2,7 +2,10 @@ var selected_profiles = 0;
 const socket = io('http://localhost:3000');
 socket.on('connect', () => {
     console.log("Socket connection established");
-    socket.emit("get-all-profiles");
+    socket.emit("ProfileSelect");
+    setInterval(function(){
+        socket.emit(alive);
+    }, 6000);
 });
 socket.on("all-profiless-success" ,(data) =>{
     console.log(data);
@@ -82,6 +85,7 @@ var gonext = ()=>{
     }
     
 }
+
 //fas fa-minus-circle text-danger
 //fas fa-plus-circle text-success
 //fas fa-spinner fa-spin
