@@ -49,7 +49,8 @@ var startVBrowser = (id)=>{
             headless: true,
             ignoreHTTPSErrors: true
         });
-        sessions[id].vbrowser.EXTID = id;
+        sessions[id].vbrowser.EXTID = 
+        id;
 
         sessions[id].vbrowser.on("disconnected", async (msg )=>{
             delete sessions[id];
