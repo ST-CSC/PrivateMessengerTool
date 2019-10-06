@@ -44,6 +44,7 @@ var startVBrowser = (id)=>{
     return new Promise(
     async (resolve,response)=>{
         sessions[id].vbrowser = await puppeteer.launch({
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
             //slowMo : 200,
             headless: false,
             ignoreHTTPSErrors: true
