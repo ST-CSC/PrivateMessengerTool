@@ -137,18 +137,24 @@ var getProfiles = function(id){
     async (resolve,reject)=>{
         await sessions[id].page.click("a[aria-label='Dashboard']");
         await sessions[id].page.waitForSelector("div[ng-if='availableProfiles.length']", { timeout: 5000 });
-        sessions[id].queue[2].data.AProfiles = await sessions[id].page.evaluate(()=>{
+        let res = await sessions[id].page.evaluate(()=>{
             let aprofiles = [];
+            let sprofiles = [];
             let elements = document.querySelectorAll("[ng-if='availableProfiles.length'] button");
             for (let i = 0; i < elements.length; i++) {
                 const element = elements[i];
                 aprofiles.push(element.getAttribute("aria-label").split("\n")[0]);
                 
             }
-            return aprofiles;
-        });
-        resolve();
-        console.log(sessions[id].queue[2].data.AProfiles)
+            elements = document.querySelectorAll("[ng-if='registeredProfiles.length'] button");
+            for (let i = 0; i < elements.length; i++) {
+                const element = elements[i];
+                sprofiles.push(element.getAttribute("aria-label").split("\n")[0]);
+                
+            }
+            return {aprofiles,sprofiles};
+        }); 
+        resolve(res);
     }) 
 }
 
@@ -219,8 +225,8 @@ app.get('/allowLogin', function (req, res) {
 ////
 
 app.get("/hi" , function(req , res){
-    getProfiles(req.cookies.id).then(()=>{
-        res.send(sessions[req.cookies.id].queue[2].data.AProfiles);
+    getProfiles(req.cookies.id).then((result)=>{
+        res.send(result);
     })
 });
 
@@ -274,11 +280,13 @@ io.on('connect', (client)=>{
     client.on("ProfileSelect" , (data)=>{
         let id = cookie.parse(client.handshake.headers.cookie).id;
         if(typeof(id) != "undefined" && typeof(sessions[id]) != "undefined"){
-            if(typeof(data) != "undefined" && sessions[id].queue[1].running == false){
-                sessions[id].queue[1].running = true;
-                //
-            }else if(sessions[id].queue[1].running == true){
-                io.to(sessions[id].socketID).emit("LogIn-running");
+            if(typeof(data) != "undefined" && sessions[id].queue[2].running == false){
+                sessions[id].queue[2].running = true;
+                getProfiles(req.cookies.id).then((result)=>{
+                    io.to(sessions[id].socketID).emit("ProfileSelect-status" , result);
+                })
+            }else if(sessions[id].queue[2].running == true){
+                io.to(sessions[id].socketID).emit("ProfileSelect-running");
             }
         }
     });
