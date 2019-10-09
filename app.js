@@ -32,7 +32,6 @@ function queue() {
             type: "ProfileSelect",
             data:{
                 SProfiles:{},
-                AProfiles:[],
             },
             running: false,
             done:false
@@ -118,7 +117,7 @@ var login = function(data , id){
                 try{
                     await sessions[id].page.waitForSelector("button[aria-label='Exit']", { timeout: 15000 });
                     //await page.click("button[aria-label='Exit']");
-                    resolve(data);
+                    resolve();
                 }catch{
                     await sessions[id].page.evaluate(()=>{
                         document.querySelector("input#username").value = "";
@@ -136,25 +135,43 @@ var getProfiles = function(id){
     return new Promise(
     async (resolve,reject)=>{
         await sessions[id].page.click("a[aria-label='Dashboard']");
-        await sessions[id].page.waitForSelector("div[ng-if='availableProfiles.length']", { timeout: 5000 });
-        let res = await sessions[id].page.evaluate(()=>{
-            let aprofiles = [];
-            let sprofiles = [];
-            let elements = document.querySelectorAll("[ng-if='availableProfiles.length'] button");
-            for (let i = 0; i < elements.length; i++) {
-                const element = elements[i];
-                aprofiles.push(element.getAttribute("aria-label").split("\n")[0]);
-                
-            }
-            elements = document.querySelectorAll("[ng-if='registeredProfiles.length'] button");
-            for (let i = 0; i < elements.length; i++) {
-                const element = elements[i];
-                sprofiles.push(element.getAttribute("aria-label").split("\n")[0]);
-                
-            }
-            return {aprofiles,sprofiles};
-        }); 
-        resolve(res);
+        let res;
+        let aprofiles = [];
+        let sprofiles = [];
+        try{
+            await sessions[id].page.waitForSelector("[ng-if='availableProfiles.length'] button", { timeout: 1000 });
+            aprofiles = await sessions[id].page.evaluate(()=>{
+                let aprofiles = [];
+                let elements = document.querySelectorAll("[ng-if='availableProfiles.length'] button");
+                for (let i = 0; i < elements.length; i++) {
+                    const element = elements[i];
+                    aprofiles.push(element.getAttribute("aria-label").split("\n")[0]);
+                    
+                }
+                return aprofiles;
+            });
+        }catch{
+            //no aprofiles
+        }
+
+        try{
+            await sessions[id].page.waitForSelector("[ng-if='registeredProfiles.length'] button", { timeout: 1000 });
+            sprofiles = await sessions[id].page.evaluate(()=>{
+                let sprofiles = [];
+                let elements = document.querySelectorAll("[ng-if='registeredProfiles.length'] button");
+                for (let i = 0; i < elements.length; i++) {
+                    const element = elements[i];
+                    sprofiles.push(element.getAttribute("aria-label").split("\n")[0]);
+                    
+                }
+                return sprofiles;
+            });
+        }catch{
+            //no sprofiles
+        } 
+        
+        
+        resolve({aprofiles,sprofiles});
     }) 
 }
 
@@ -253,7 +270,7 @@ io.on('connect', (client)=>{
                 startVBrowser(cookie.parse(client.handshake.headers.cookie).id).then((id)=>{
                     sessions[id].queue[0].done = true;
                     sessions[id].queue[0].running = false;
-                    io.to(sessions[id].socketID).emit("StartService-success");
+                    io.to(sessions[id].socketID).emit("StartService");
                 });
             }
         }
@@ -263,27 +280,28 @@ io.on('connect', (client)=>{
         if(typeof(id) != "undefined" && typeof(sessions[id]) != "undefined"){
             if(typeof(data) != "undefined" && sessions[id].queue[1].running == false){
                 sessions[id].queue[1].running = true;
-                login(data , id).then((data)=>{
+                sessions[id].queue[1].data = data;
+                login(data , id).then(()=>{
                     sessions[id].queue[1].running = false;
                     sessions[id].queue[1].done = true;
-                    sessions[id].queue[1].data = data;
-                    io.to(sessions[id].socketID).emit("LogIn-success");
+                    io.to(sessions[id].socketID).emit("LogIn" , "success");
                 },()=>{
                     sessions[id].queue[1].running = false;
-                    io.to(sessions[id].socketID).emit("LogIn-fail");
+                    io.to(sessions[id].socketID).emit("LogIn" , "fail");
                 })
             }else if(sessions[id].queue[1].running == true){
-                io.to(sessions[id].socketID).emit("LogIn-running");
+                io.to(sessions[id].socketID).emit("LogIn", sessions[id].queue[1].data);
             }
         }
     });
     client.on("ProfileSelect" , (data)=>{
         let id = cookie.parse(client.handshake.headers.cookie).id;
         if(typeof(id) != "undefined" && typeof(sessions[id]) != "undefined"){
-            if(typeof(data) != "undefined" && sessions[id].queue[2].running == false){
+            if(typeof(data) == "undefined"){
+                console.log("OK");
                 sessions[id].queue[2].running = true;
-                getProfiles(req.cookies.id).then((result)=>{
-                    io.to(sessions[id].socketID).emit("ProfileSelect-status" , result);
+                getProfiles(id).then((data)=>{
+                    io.to(sessions[id].socketID).emit("ProfileSelect" , data);
                 })
             }else if(sessions[id].queue[2].running == true){
                 io.to(sessions[id].socketID).emit("ProfileSelect-running");

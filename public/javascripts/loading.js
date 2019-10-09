@@ -8,7 +8,7 @@ socket.on('connect', () => {
     console.log("Socket connection established");
     socket.emit("StartService");
 });
-socket.on('StartService-success', () => {
+socket.on('StartService', () => {
     window.location = origin ;
 });
 
