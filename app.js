@@ -1,18 +1,18 @@
 "use strict"
 require('dotenv').config();
-var axios = require('axios');
-var cookie = require("cookie");
-var cookieParser = require('cookie-parser');
-var helper = require("./helper");
-var colors = require('colors/safe');
-var puppeteer = require('puppeteer');
-var express = require('express')
-var app = express();
-var server = require('http').createServer(app);
-var io = require('socket.io')(server);
-var exphbs  = require('express-handlebars');
-var path = require("path");
-var sessions = {};
+const axios = require('axios');
+const cookie = require("cookie");
+const cookieParser = require('cookie-parser');
+const helper = require("./helper");
+const colors = require('colors/safe');
+const puppeteer = require('puppeteer');
+const express = require('express')
+const app = express();
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
+const exphbs  = require('express-handlebars');
+const path = require("path");
+const sessions = {};
 
 function queue() { 
     return [
@@ -31,14 +31,14 @@ function queue() {
         {
             type: "ProfileSelect",
             data:{
-                SProfiles:{},
+                SProfiles:[],
             },
             running: false,
             done:false
         },
     ];
 }
-var startVBrowser = (id)=>{
+let startVBrowser = (id)=>{
     return new Promise(
     async (resolve,response)=>{
 
@@ -76,7 +76,7 @@ var startVBrowser = (id)=>{
     });
     
 }
-var maxConection = ()=>{
+let maxConection = ()=>{
     return new Promise(
     async (resolve, reject)=>{
         let nrOfcon = Object.keys(sessions).length ;
@@ -97,7 +97,7 @@ var maxConection = ()=>{
     });
 
 }
-var login = function(data , id){
+let login = function(data , id){
     return new Promise(
         async (resolve , reject) => {
             let allowlogin = "";
@@ -131,7 +131,7 @@ var login = function(data , id){
         }
     );
 }
-var getProfiles = function(id){
+let getProfiles = function(id){
     return new Promise(
     async (resolve,reject)=>{
         await sessions[id].page.click("a[aria-label='Dashboard']");
@@ -170,8 +170,44 @@ var getProfiles = function(id){
             //no sprofiles
         } 
         
-        
+        sessions[id].queue[2].data.SProfiles = sprofiles;
         resolve({aprofiles,sprofiles});
+    }) 
+}
+let grabProfile = function(id , name){
+    return new Promise(
+    async (resolve,reject)=>{
+        try{
+            await sessions[id].page.click("a[aria-label='Dashboard']");
+            await sessions[id].page.waitForSelector("[ng-if='availableProfiles.length'] button", { timeout: 5000 });
+            await sessions[id].page.click(`div[ng-if="availableProfiles.length"] button[aria-label^="${name}"]`);
+            await sessions[id].page.waitForXPath(`//md-content/h4[text()='${name}']`, { timeout: 5000 } );
+            await sessions[id].page.evaluate(()=>{
+                document.querySelectorAll('button[ng-click="showProfile()"]').forEach(e=>{
+                    let name = e.parentNode.querySelector("h4").innerText.trim();
+                    e.setAttribute("pname",name);
+                })
+                return ;
+            });
+            resolve();
+        }catch{
+            await sessions[id].page.goto('https://www.private-messenger.com', {waitUntil: 'networkidle2'});
+            reject();
+        }
+        
+    }) 
+}
+let releaseProfile = function(id , name){
+    return new Promise(
+    async (resolve,reject)=>{
+        
+            await sessions[id].page.click("a[aria-label='Dashboard']");
+            await sessions[id].page.waitForSelector("[ng-if='registeredProfiles.length'] button", { timeout: 5000 });
+            await sessions[id].page.click(`[ng-if="registeredProfiles.length"] button[aria-label^="${name}"]`);
+            await sessions[id].page.waitForSelector(`[ng-if="registeredProfiles.length"] button[aria-label^="${name}"]`, { timeout: 5000 });
+            resolve();
+
+        
     }) 
 }
 
@@ -297,17 +333,58 @@ io.on('connect', (client)=>{
     client.on("ProfileSelect" , (data)=>{
         let id = cookie.parse(client.handshake.headers.cookie).id;
         if(typeof(id) != "undefined" && typeof(sessions[id]) != "undefined"){
-            if(typeof(data) == "undefined"){
+            if(typeof(data) == "undefined" && sessions[id].queue[2].running == false){
                 console.log("OK");
                 sessions[id].queue[2].running = true;
                 getProfiles(id).then((data)=>{
                     io.to(sessions[id].socketID).emit("ProfileSelect" , data);
+                    sessions[id].queue[2].running = false;
                 })
+            }else if(typeof(data) != "undefined"){
+                sessions[id].queue[2].running = true;
+                switch (data.action) {
+                    case "grab":
+                        grabProfile(id , data.name).then(()=>{
+                            getProfiles(id).then((data)=>{
+                                io.to(sessions[id].socketID).emit("ProfileSelect" , data);
+                                sessions[id].queue[2].running = false;
+                                console.log("1");
+                            })
+                        },()=>{
+                            getProfiles(id).then((data)=>{
+                                io.to(sessions[id].socketID).emit("ProfileSelect" , data);
+                                sessions[id].queue[2].running = false;
+                                console.log("2");
+                            })
+                        })
+                        break;
+                    case "release":
+                        releaseProfile(id , data.name).then(()=>{
+                            getProfiles(id).then((data)=>{
+                                io.to(sessions[id].socketID).emit("ProfileSelect" , data);
+                                sessions[id].queue[2].running = false;
+                                console.log("1");
+                            })
+                        },()=>{
+                            getProfiles(id).then((data)=>{
+                                io.to(sessions[id].socketID).emit("ProfileSelect" , data);
+                                sessions[id].queue[2].running = false;
+                                console.log("2");
+                            })
+                        })
+                        break;
+                
+                    default:
+                        break;
+                }
+                console.log(data);
             }else if(sessions[id].queue[2].running == true){
-                io.to(sessions[id].socketID).emit("ProfileSelect-running");
+                io.to(sessions[id].socketID).emit("ProfileSelect", {aprofiles:[],sprofiles:sessions[id].queue[2].data.SProfiles});
             }
         }
     });
+
+    //alive
     client.on("alive" , ()=>{
         let id = cookie.parse(client.handshake.headers.cookie).id;
         if(typeof(id) != "undefined" && typeof(sessions[id]) != "undefined"){
