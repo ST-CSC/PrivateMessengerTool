@@ -1,4 +1,5 @@
-const socket = io('http://localhost:3000');
+const origin = window.location.origin;
+const socket = io(origin);
 socket.on('connect', () => {
     console.log("Socket connection established");
     socket.emit("ProfileSelect");
