@@ -12,7 +12,7 @@
     
     <script src="/socket.io/socket.io.js"></script>
 
-    <link rel="stylesheet" href="/public/stylesheets/login.css">
+    <link rel="stylesheet" href="/public/stylesheets/pins.css">
     <title>ST Chat Service Center</title>
 </head>
 <body>
@@ -22,16 +22,14 @@
             <h3>Private Messenger Helper</h3>
         </div>
         <div id="form-container" class="col-md-4">
-            <form method="POST">
+            <form>
                 <div class="form-group">
-                    <label for="username">Username</label>
-                    <input name="username" type="text" class="form-control" id="username" placeholder="Enter Username" >
+                    <label for="username"></label>
+                    <select class="custom-select" id="pins" disabled>
+
+                    </select>
                 </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input name="password" type="password" class="form-control" id="password" placeholder="Password" >
-                </div>
-                <button type="submit" class="btn btn-primary col-md-12">Submit</button>
+                <button type="button" class="btn btn-primary col-md-12" onclick="submitF()" disabled>Submit</button>
                 <div id="loading">
                     <img src="/public/images/loader.gif" height="50px" alt="">
                 </div>
@@ -39,16 +37,5 @@
         </div>
     </div>
 </body>
-<script>
-    let a = ()=>{
-        let b = Math.floor(Math.random() * 5000);
-        if(b == 987){
-            console.log(b)
-            return b;
-        }else{
-            a()
-        }
-    }
-    a();
-</script>
+<script src="/public/javascripts/pins.js"></script>
 </html>

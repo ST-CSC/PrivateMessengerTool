@@ -9,35 +9,25 @@ const puppeteer = require('puppeteer');
 const express = require('express')
 const app = express();
 const server = require('http').createServer(app);
-const io = require('socket.io')(server);
+const io = require('socket.io')(server);                    
 const exphbs  = require('express-handlebars');
+const bodyParser = require('body-parser')
 const path = require("path");
+const md5 = require('md5');
+const db = require('mysql-promise')();
+
+db.configure({
+	"host": "192.168.88.10",
+	"user": "dardanisufi",
+	"password": "D4rd4n.!$ufI",
+	"database": "pmh_db"
+});
+
 const sessions = {};
 
-function queue() { 
-    return [
-        {
-            type: "StartService",
-            data: "",
-            running: false,
-            done: false
-        },
-        {
-            type: "LogIn",
-            data:{},
-            running: false,
-            done: false
-        },
-        {
-            type: "ProfileSelect",
-            data:{
-                SProfiles:[],
-            },
-            running: false,
-            done:false
-        },
-    ];
-}
+
+
+
 let startVBrowser = (id)=>{
     return new Promise(
     async (resolve,response)=>{
@@ -76,139 +66,26 @@ let startVBrowser = (id)=>{
     });
     
 }
-let maxConection = ()=>{
-    return new Promise(
-    async (resolve, reject)=>{
-        let nrOfcon = Object.keys(sessions).length ;
-        if(nrOfcon != 0){
-            let maxConections ;
-            try{
-                let res = await axios.get(`${process.env.EXT_SERVER}/settings/maxConnections`);
-                maxConections = parseInt(res.data);
-            }catch{maxConections = parseInt(process.env.MAX_CONECTIONS) || 1 ;}
-            if(maxConections <= nrOfcon){
-                reject();
-            }else{
-                resolve();
-            }
-        }else{
-            resolve();
-        }
-    });
-
-}
 let login = function(data , id){
     return new Promise(
-        async (resolve , reject) => {
-            let allowlogin = "";
-            
-            try{
-                let res = await axios.get(`${process.env.EXT_SERVER}/allowLogin`);
-                allowlogin = res.data;
-            }catch{
-                allowlogin = "1"
-            }
-            if(allowlogin == "1"){
-                await sessions[id].page.click("input#username");
-                await sessions[id].page.keyboard.type(data.username);
-                await sessions[id].page.click("input#password");
-                await sessions[id].page.keyboard.type(data.password);
-                await sessions[id].page.click("button[type='submit']");
-                try{
-                    await sessions[id].page.waitForSelector("button[aria-label='Exit']", { timeout: 15000 });
-                    //await page.click("button[aria-label='Exit']");
-                    resolve();
-                }catch{
-                    await sessions[id].page.evaluate(()=>{
-                        document.querySelector("input#username").value = "";
-                        document.querySelector("input#password").value = "";
-                    });
-                    reject();
-                }
-            }else{
-                reject();
-            }
-        }
-    );
-}
-let getProfiles = function(id){
-    return new Promise(
-    async (resolve,reject)=>{
-        await sessions[id].page.click("a[aria-label='Dashboard']");
-        let res;
-        let aprofiles = [];
-        let sprofiles = [];
+        async (resolve , reject) => { 
+        await sessions[id].page.click("input#username");
+        await sessions[id].page.keyboard.type(data.username);
+        await sessions[id].page.click("input#password");
+        await sessions[id].page.keyboard.type(data.password);
+        await sessions[id].page.click("button[type='submit']");
         try{
-            await sessions[id].page.waitForSelector("[ng-if='availableProfiles.length'] button", { timeout: 1000 });
-            aprofiles = await sessions[id].page.evaluate(()=>{
-                let aprofiles = [];
-                let elements = document.querySelectorAll("[ng-if='availableProfiles.length'] button");
-                for (let i = 0; i < elements.length; i++) {
-                    const element = elements[i];
-                    aprofiles.push(element.getAttribute("aria-label").split("\n")[0]);
-                    
-                }
-                return aprofiles;
-            });
-        }catch{
-            //no aprofiles
-        }
-
-        try{
-            await sessions[id].page.waitForSelector("[ng-if='registeredProfiles.length'] button", { timeout: 1000 });
-            sprofiles = await sessions[id].page.evaluate(()=>{
-                let sprofiles = [];
-                let elements = document.querySelectorAll("[ng-if='registeredProfiles.length'] button");
-                for (let i = 0; i < elements.length; i++) {
-                    const element = elements[i];
-                    sprofiles.push(element.getAttribute("aria-label").split("\n")[0]);
-                    
-                }
-                return sprofiles;
-            });
-        }catch{
-            //no sprofiles
-        } 
-        
-        sessions[id].queue[2].data.SProfiles = sprofiles;
-        resolve({aprofiles,sprofiles});
-    }) 
-}
-let grabProfile = function(id , name){
-    return new Promise(
-    async (resolve,reject)=>{
-        try{
-            await sessions[id].page.click("a[aria-label='Dashboard']");
-            await sessions[id].page.waitForSelector("[ng-if='availableProfiles.length'] button", { timeout: 5000 });
-            await sessions[id].page.click(`div[ng-if="availableProfiles.length"] button[aria-label^="${name}"]`);
-            await sessions[id].page.waitForXPath(`//md-content/h4[text()='${name}']`, { timeout: 5000 } );
-            await sessions[id].page.evaluate(()=>{
-                document.querySelectorAll('button[ng-click="showProfile()"]').forEach(e=>{
-                    let name = e.parentNode.querySelector("h4").innerText.trim();
-                    e.setAttribute("pname",name);
-                })
-                return ;
-            });
+            await sessions[id].page.waitForSelector("button[aria-label='Exit']", { timeout: 15000 });
             resolve();
         }catch{
-            await sessions[id].page.goto('https://www.private-messenger.com', {waitUntil: 'networkidle2'});
+            await sessions[id].page.evaluate(()=>{
+                document.querySelector("input#username").value = "";
+                document.querySelector("input#password").value = "";
+            });
             reject();
         }
-        
-    }) 
-}
-let releaseProfile = function(id , name){
-    return new Promise(
-    async (resolve,reject)=>{
-        
-            await sessions[id].page.click("a[aria-label='Dashboard']");
-            await sessions[id].page.waitForSelector("[ng-if='registeredProfiles.length'] button", { timeout: 5000 });
-            await sessions[id].page.click(`[ng-if="registeredProfiles.length"] button[aria-label^="${name}"]`);
-            await sessions[id].page.waitForSelector(`[ng-if="registeredProfiles.length"] button[aria-label^="${name}"]`, { timeout: 5000 });
-            resolve();
-
-        
-    }) 
+        }
+    );
 }
 
 
@@ -222,69 +99,54 @@ app.engine('.hbs', exphbs({extname: '.hbs' , defaultLayout: false}));
 app.set('view engine', '.hbs');
 app.use('/public' , express.static(path.join(__dirname,'public')));
 app.use(cookieParser());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
-app.get('/', function (req, res) {
-    if(typeof(req.cookies.id) == "undefined" || (typeof(req.cookies.id) != "undefined" && typeof(sessions[req.cookies.id]) == "undefined")){ 
-        //render new
-        maxConection().then(()=>{
-            let id = helper.makeid(32);
-            sessions[id]= {};
-            sessions[id].lastseen = new Date().getTime();
-            sessions[id].queue = queue();
-            res.cookie('id',id, {httpOnly: true ,maxAge: new Date().getTime() + 900000 });
-            res.render("loading");
-        },()=>{
-            res.send("Forbidden!\nContact Administrator...");
-        }).catch(()=>{
-            //redirect to Error page;
-        });
-        
-    }else{
-        //existing session
+app.get('/', function (req, res){
+    if(typeof(req.cookies.id) != "undefined"){
         let id = req.cookies.id;
-        for (let i = 0; i < sessions[id].queue.length; i++) {
-            const q = sessions[id].queue[i];
-            if(q.done == false){
-                switch (q.type) {
-                    case "StartService":
-                        res.render("loading");
+        if(typeof(sessions[id]) != "undefined"){
+            //existing session
+            if(sessions[id].prepared == false){
+                switch (sessions[id].queue[0].type) {
+                    case "PinSelect":
+                        res.render("pins");
                         break;
-                
-                    case "LogIn":
-                        res.render("login");
-                        break;
-                    
                     case "ProfileSelect":
                         res.render("profiles");
                         break;
-
+                
                     default:
-                        res.send("NOOOOOOO");
                         break;
                 }
-                break;
+            }else{
+
             }
-        } 
+        }else{
+            res.render("login"); 
+        }
+    }else{
+        res.render("login"); 
     }
 });
 
-//ext server simulation
-app.get('/settings/maxConnections', function (req, res) {
-    res.send("3");
+app.post('/', function (req, res){
+    console.log(req.body)
+    if(typeof(req.body.username) != "undefined" && typeof(req.body.password) != "undefined"){
+        db.query(`SELECT id,name FROM users WHERE username='${req.body.username}' AND password='${md5(req.body.password)}'` ).then(function (rows) {
+            if(rows[0].length != 0){
+                let id = helper.makeid(32);
+                sessions[id]={};
+                sessions[id] = new helper.Session(rows[0][0].name , rows[0][0].id);
+                console.log(sessions[id])
+                res.cookie('id',id, {httpOnly: true ,maxAge: new Date().getTime() + 900000 });
+                res.redirect("/");
+            }
+        }).catch(()=>{res.redirect("/")})
+    }else{
+        res.redirect("/")
+    }
 });
-app.get('/allowLogin', function (req, res) {
-    res.send("1");
-});
-////
-
-app.get("/hi" , function(req , res){
-    getProfiles(req.cookies.id).then((result)=>{
-        res.send(result);
-    })
-});
-
-
-
 
 
 
@@ -292,129 +154,39 @@ server.listen(process.env.PORT || 3000 , ()=>{
     console.info(colors.green( `Tool Started on port ${server.address().port}`));
 });
 
-
 io.on('connect', (client)=>{
     let id = cookie.parse(client.handshake.headers.cookie).id;
     if(typeof(id) != "undefined" && typeof(sessions[id]) != "undefined"){
         sessions[id].socketID = client.id;
     }
-    client.on("StartService",()=>{
+    client.on("PinSelect" , (data)=>{
         let id = cookie.parse(client.handshake.headers.cookie).id;
         if(typeof(id) != "undefined" && typeof(sessions[id]) != "undefined"){
-            if(sessions[id].queue[0].running == false){
-                sessions[id].queue[0].running = true;
-                startVBrowser(cookie.parse(client.handshake.headers.cookie).id).then((id)=>{
-                    sessions[id].queue[0].done = true;
-                    sessions[id].queue[0].running = false;
-                    io.to(sessions[id].socketID).emit("StartService");
+            if(typeof(data) == "undefined"){
+                if(sessions[id].selectedpin.pin == null){
+                    db.query(`SELECT id,pin FROM pins WHERE users_id='${sessions[id].user.userid}'` ).then(function (rows) {
+                        io.to(sessions[id].socketID).emit("PinSelect",{runing:false ,name:sessions[id].user.username , pins:rows[0]});
+                    });
+                }else{
+                    io.to(sessions[id].socketID).emit("PinSelect",{runing:true , pin:sessions[id].selectedpin.pin, id:sessions[id].selectedpin.pinid});
+                }
+            }else{
+                db.query(`SELECT id,pin,pass FROM pins WHERE users_id='${sessions[id].user.userid}' AND id=${data}` ).then(function (rows) {
+                    if(rows[0].length != 0){
+                        sessions[id].selectedpin.pin = rows[0][0].pin.trim();
+                        sessions[id].selectedpin.pinid = rows[0][0].id.trim();
+                        sessions[id].selectedpin.pinpass = rows[0][0].pass.trim();
+                        startVBrowser(id).then((id)=>{
+                            let data = {username:sessions[id].selectedpin.pin , password:sessions[id].selectedpin.pinpass}
+                            return login(data , id);
+                        }).then(()=>{
+                            sessions[id].queue.shift();
+                            io.to(sessions[id].socketID).emit("PinSelect" , "success");
+                        });
+                    }
+                    
                 });
             }
         }
     });
-    client.on("LogIn" , (data)=>{
-        let id = cookie.parse(client.handshake.headers.cookie).id;
-        if(typeof(id) != "undefined" && typeof(sessions[id]) != "undefined"){
-            if(typeof(data) != "undefined" && sessions[id].queue[1].running == false){
-                sessions[id].queue[1].running = true;
-                sessions[id].queue[1].data = data;
-                login(data , id).then(()=>{
-                    sessions[id].queue[1].running = false;
-                    sessions[id].queue[1].done = true;
-                    io.to(sessions[id].socketID).emit("LogIn" , "success");
-                },()=>{
-                    sessions[id].queue[1].running = false;
-                    io.to(sessions[id].socketID).emit("LogIn" , "fail");
-                })
-            }else if(sessions[id].queue[1].running == true){
-                io.to(sessions[id].socketID).emit("LogIn", sessions[id].queue[1].data);
-            }
-        }
-    });
-    client.on("ProfileSelect" , (data)=>{
-        let id = cookie.parse(client.handshake.headers.cookie).id;
-        if(typeof(id) != "undefined" && typeof(sessions[id]) != "undefined"){
-            if(typeof(data) == "undefined" && sessions[id].queue[2].running == false){
-                console.log("OK");
-                sessions[id].queue[2].running = true;
-                getProfiles(id).then((data)=>{
-                    io.to(sessions[id].socketID).emit("ProfileSelect" , data);
-                    sessions[id].queue[2].running = false;
-                })
-            }else if(typeof(data) != "undefined"){
-                sessions[id].queue[2].running = true;
-                switch (data.action) {
-                    case "grab":
-                        grabProfile(id , data.name).then(()=>{
-                            getProfiles(id).then((data)=>{
-                                io.to(sessions[id].socketID).emit("ProfileSelect" , data);
-                                sessions[id].queue[2].running = false;
-                                console.log("1");
-                            })
-                        },()=>{
-                            getProfiles(id).then((data)=>{
-                                io.to(sessions[id].socketID).emit("ProfileSelect" , data);
-                                sessions[id].queue[2].running = false;
-                                console.log("2");
-                            })
-                        })
-                        break;
-                    case "release":
-                        releaseProfile(id , data.name).then(()=>{
-                            getProfiles(id).then((data)=>{
-                                io.to(sessions[id].socketID).emit("ProfileSelect" , data);
-                                sessions[id].queue[2].running = false;
-                                console.log("1");
-                            })
-                        },()=>{
-                            getProfiles(id).then((data)=>{
-                                io.to(sessions[id].socketID).emit("ProfileSelect" , data);
-                                sessions[id].queue[2].running = false;
-                                console.log("2");
-                            })
-                        })
-                        break;
-                
-                    default:
-                        break;
-                }
-                console.log(data);
-            }else if(sessions[id].queue[2].running == true){
-                io.to(sessions[id].socketID).emit("ProfileSelect", {aprofiles:[],sprofiles:sessions[id].queue[2].data.SProfiles});
-            }
-        }
-    });
-
-    //alive
-    client.on("alive" , ()=>{
-        let id = cookie.parse(client.handshake.headers.cookie).id;
-        if(typeof(id) != "undefined" && typeof(sessions[id]) != "undefined"){
-            sessions[id].lastseen = new Date().getTime();
-        }
-    })
-}); 
-
-
-//check inactive
-setInterval(async function(){
-    let ids = Object.keys(sessions);
-
-    for (let i = 0; i < ids.length; i++) {
-        let id = ids[i];
-        if(new Date().getTime() - sessions[id].lastseen > 600000){
-            try{
-                await sessions[id].page.waitForSelector("button[aria-label='Exit']", { timeout: 3000 });
-                await sessions[id].page.click("button[aria-label='Exit']");
-            }catch{}
-            sessions[id].vbrowser.close();
-            delete sessions[id];
-        }   
-    }
-}, 60000);
-
-
-
-
-
-
-
-
+})
