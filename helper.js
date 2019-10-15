@@ -26,13 +26,14 @@ function Session(username , userid){
         pinid : null,
         pinpass: null
     }
-    this.profiles = [];
+    this.profiles = []
     this.queue = [
         {
             type:"PinSelect",
         },
         {
-            type:"ProfileSelect"
+            type:"ProfileSelect",
+            runing:false,
         }
     ];
 

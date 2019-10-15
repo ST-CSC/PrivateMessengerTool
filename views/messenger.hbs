@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous">
+    </script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous">
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <link rel="stylesheet" href="/public/stylesheets/messenger.css">
+    <title>ST Chat Service Center</title>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div id="img-container" class="col-md-12">
+            <img src="/public/images/logo.png" height="100px" alt="">
+            <h3>Private Messenger Helper</h3>
+        </div>
+        <div id="form-container" class="col-md-4">
+            <form>
+                <button type="button" class="btn btn-primary col-md-12" data-toggle="modal"
+                    data-target=".bd-example-modal-lg">Submit</button>
+                <div id="loading">
+                    <img src="/public/images/loader.gif" height="50px" alt="">
+                </div>
+            </form>
+
+        </div>
+        <div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <!-- DIRECT CHAT PRIMARY -->
+                    <div class="box box-primary direct-chat direct-chat-primary">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">Direct Chat</h3>
+
+                            <div class="box-tools pull-right">
+                                <span data-toggle="tooltip" title="" class="badge bg-light-blue"
+                                    data-original-title="3 New Messages">3</span>
+                                <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
+                                        class="fa fa-minus"></i>
+                                </button>
+                                <button type="button" class="btn btn-box-tool" data-toggle="tooltip" title="Contacts"
+                                    data-widget="chat-pane-toggle">
+                                    <i class="fa fa-comments"></i></button>
+                                <button type="button" class="btn btn-box-tool" data-widget="remove"><i
+                                        class="fa fa-times"></i></button>
+                            </div>
+                        </div>
+                        <!-- /.box-header -->
+                        <div class="box-body">
+                            <!-- Conversations are loaded here -->
+                            <div class="direct-chat-messages">
+                                <!-- Message. Default to the left -->
+                                <div class="direct-chat-msg">
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-left">Alexander Pierce</span>
+                                        <span class="direct-chat-timestamp pull-right">23 Jan 2:00 pm</span>
+                                    </div>
+                                    <!-- /.direct-chat-info -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_1.jpg"
+                                        alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        Hello , Can you belive it ?
+                                    </div>
+                                    <!-- /.direct-chat-text -->
+                                </div>
+                                <!-- /.direct-chat-msg -->
+
+                                <!-- Message to the right -->
+                                <div class="direct-chat-msg right">
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-right">Sarah Bullock</span>
+                                        <span class="direct-chat-timestamp pull-left">23 Jan 2:05 pm</span>
+                                    </div>
+                                    <!-- /.direct-chat-info -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg"
+                                        alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        You better believe it!
+                                    </div>
+                                    <!-- /.direct-chat-text -->
+                                </div>
+                                <div class="direct-chat-msg right">
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-right">Sarah Bullock</span>
+                                        <span class="direct-chat-timestamp pull-left">23 Jan 2:05 pm</span>
+                                    </div>
+                                    <!-- /.direct-chat-info -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg"
+                                        alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        You better believe it!
+                                    </div>
+                                    <!-- /.direct-chat-text -->
+                                </div>
+                                <div class="direct-chat-msg right">
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-right">Sarah Bullock</span>
+                                        <span class="direct-chat-timestamp pull-left">23 Jan 2:05 pm</span>
+                                    </div>
+                                    <!-- /.direct-chat-info -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg"
+                                        alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        You better believe it!
+                                    </div>
+                                    <!-- /.direct-chat-text -->
+                                </div>
+                                <div class="direct-chat-msg right">
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-right">Sarah Bullock</span>
+                                        <span class="direct-chat-timestamp pull-left">23 Jan 2:05 pm</span>
+                                    </div>
+                                    <!-- /.direct-chat-info -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg"
+                                        alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        You better believe it!
+                                    </div>
+                                    <!-- /.direct-chat-text -->
+                                </div>
+                                <div class="direct-chat-msg right">
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-right">Sarah Bullock</span>
+                                        <span class="direct-chat-timestamp pull-left">23 Jan 2:05 pm</span>
+                                    </div>
+                                    <!-- /.direct-chat-info -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg"
+                                        alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        You better believe it!
+                                    </div>
+                                    <!-- /.direct-chat-text -->
+                                </div>
+                                <div class="direct-chat-msg right">
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-right">Sarah Bullock</span>
+                                        <span class="direct-chat-timestamp pull-left">23 Jan 2:05 pm</span>
+                                    </div>
+                                    <!-- /.direct-chat-info -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg"
+                                        alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        You better believe it!
+                                    </div>
+                                    <!-- /.direct-chat-text -->
+                                </div>
+                                <div class="direct-chat-msg right">
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-right">Sarah Bullock</span>
+                                        <span class="direct-chat-timestamp pull-left">23 Jan 2:05 pm</span>
+                                    </div>
+                                    <!-- /.direct-chat-info -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg"
+                                        alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        You better believe it!
+                                    </div>
+                                    <!-- /.direct-chat-text -->
+                                </div>
+                                <div class="direct-chat-msg right">
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-right">Sarah Bullock</span>
+                                        <span class="direct-chat-timestamp pull-left">23 Jan 2:05 pm</span>
+                                    </div>
+                                    <!-- /.direct-chat-info -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg"
+                                        alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        You better believe it!
+                                    </div>
+                                    <!-- /.direct-chat-text -->
+                                </div>
+                                <div class="direct-chat-msg right">
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-right">Sarah Bullock</span>
+                                        <span class="direct-chat-timestamp pull-left">23 Jan 2:05 pm</span>
+                                    </div>
+                                    <!-- /.direct-chat-info -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg"
+                                        alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        You better believe it!
+                                    </div>
+                                    <!-- /.direct-chat-text -->
+                                </div>
+                                <div class="direct-chat-msg right">
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-right">Sarah Bullock</span>
+                                        <span class="direct-chat-timestamp pull-left">23 Jan 2:05 pm</span>
+                                    </div>
+                                    <!-- /.direct-chat-info -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg"
+                                        alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        You better believe it!
+                                    </div>
+                                    <!-- /.direct-chat-text -->
+                                </div>
+                                <div class="direct-chat-msg right">
+                                    <div class="direct-chat-info clearfix">
+                                        <span class="direct-chat-name pull-right">Sarah Bullock</span>
+                                        <span class="direct-chat-timestamp pull-left">23 Jan 2:05 pm</span>
+                                    </div>
+                                    <!-- /.direct-chat-info -->
+                                    <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg"
+                                        alt="Message User Image"><!-- /.direct-chat-img -->
+                                    <div class="direct-chat-text">
+                                        You better believe it!
+                                    </div>
+                                    <!-- /.direct-chat-text -->
+                                </div>
+                                <!-- /.direct-chat-msg -->
+                            </div>
+                            <!--/.direct-chat-messages-->
+                        </div>
+                        <!-- /.box-body -->
+                        <div class="box-footer">
+                            <form action="#" method="post">
+                                <div class="input-group">
+                                    <input type="text" name="message" placeholder="Type Message ..."
+                                        class="form-control">
+                                    <span class="input-group-btn">
+                                        <button type="submit" class="btn btn-primary btn-flat">Send</button>
+                                    </span>
+                                </div>
+                            </form>
+                        </div>
+                        <!-- /.box-footer-->
+                    </div>
+                    <!--/.direct-chat -->
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</body>
+<script src="/public/javascripts/messenger.js"></script>
+
+</html>

@@ -87,6 +87,85 @@ let login = function(data , id){
         }
     );
 }
+let getProfiles = function(id){
+    return new Promise(
+    async (resolve,reject)=>{
+        await sessions[id].page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] });
+        await sessions[id].page.click("a[aria-label='Dashboard']");
+        let res;
+        let aprofiles = [];
+        let sprofiles = [];
+        try{
+            await sessions[id].page.waitForSelector("[ng-if='availableProfiles.length'] button", { timeout: 1000 });
+            aprofiles = await sessions[id].page.evaluate(()=>{
+                let aprofiles = [];
+                let elements = document.querySelectorAll("[ng-if='availableProfiles.length'] button");
+                for (let i = 0; i < elements.length; i++) {
+                    const element = elements[i];
+                    aprofiles.push(element.getAttribute("aria-label").split("\n")[0]);
+                    
+                }
+                return aprofiles;
+            });
+        }catch{
+            //no aprofiles
+        }
+
+        try{
+            await sessions[id].page.waitForSelector("[ng-if='registeredProfiles.length'] button", { timeout: 1000 });
+            sprofiles = await sessions[id].page.evaluate(()=>{
+                let sprofiles = [];
+                let elements = document.querySelectorAll("[ng-if='registeredProfiles.length'] button");
+                for (let i = 0; i < elements.length; i++) {
+                    const element = elements[i];
+                    sprofiles.push(element.getAttribute("aria-label").split("\n")[0]);
+                    
+                }
+                return sprofiles;
+            });
+        }catch{
+            //no sprofiles
+        } 
+        sessions[id].profiles = sprofiles;
+        resolve({aprofiles,sprofiles});
+    }) 
+}
+
+let grabProfile = function(id , name){
+    return new Promise(
+    async (resolve,reject)=>{
+        try{
+            await sessions[id].page.click("a[aria-label='Dashboard']");
+            await sessions[id].page.waitForSelector("[ng-if='availableProfiles.length'] button", { timeout: 5000 });
+            await sessions[id].page.click(`div[ng-if="availableProfiles.length"] button[aria-label^="${name}"]`);
+            await sessions[id].page.waitForXPath(`//md-content/h4[text()='${name}']`, { timeout: 5000 } );
+            await sessions[id].page.evaluate(()=>{
+                document.querySelectorAll('button[ng-click="showProfile()"]').forEach(e=>{
+                    let name = e.parentNode.querySelector("h4").innerText.trim();
+                    e.setAttribute("pname",name);
+                })
+                return ;
+            });
+            resolve();
+        }catch{
+            reject();
+        }
+        
+    }) 
+}
+let releaseProfile = function(id , name){
+    return new Promise(
+    async (resolve,reject)=>{
+        
+            await sessions[id].page.click("a[aria-label='Dashboard']");
+            await sessions[id].page.waitForSelector("[ng-if='registeredProfiles.length'] button", { timeout: 5000 });
+            await sessions[id].page.click(`[ng-if="registeredProfiles.length"] button[aria-label^="${name}"]`);
+            await sessions[id].page.waitForSelector(`[ng-if="registeredProfiles.length"] button[aria-label^="${name}"]`, { timeout: 5000 });
+            resolve();
+
+        
+    }) 
+}
 
 
 
@@ -149,6 +228,11 @@ app.post('/', function (req, res){
 });
 
 
+app.get('/test', function (req, res){
+    res.render("messenger");
+});
+
+
 
 server.listen(process.env.PORT || 3000 , ()=>{
     console.info(colors.green( `Tool Started on port ${server.address().port}`));
@@ -189,4 +273,81 @@ io.on('connect', (client)=>{
             }
         }
     });
+    client.on("ProfileSelect" , (data)=>{
+        let id = cookie.parse(client.handshake.headers.cookie).id;
+        if(typeof(id) != "undefined" && typeof(sessions[id]) != "undefined"){
+            if(typeof(data) == "undefined" && sessions[id].queue[0].type == "ProfileSelect" && sessions[id].queue[0].runing == false){
+                sessions[id].queue[0].running = true;
+                getProfiles(id).then((data)=>{
+                    io.to(sessions[id].socketID).emit("ProfileSelect" , data);
+                    sessions[id].queue[0].running = false;
+                })
+            }else if(typeof(data) != "undefined" && sessions[id].queue[0].type == "ProfileSelect"){
+                sessions[id].queue[0].running = true;
+                switch (data.action) {
+                    case "grab":
+                        grabProfile(id , data.name).then(()=>{
+                            getProfiles(id).then((data)=>{
+                                io.to(sessions[id].socketID).emit("ProfileSelect" , data);
+                                sessions[id].queue[0].running = false;
+                                console.log("1");
+                            })
+                        },()=>{
+                            getProfiles(id).then((data)=>{
+                                io.to(sessions[id].socketID).emit("ProfileSelect" , data);
+                                sessions[id].queue[0].running = false;
+                                console.log("2");
+                            })
+                        })
+                        break;
+                    case "release":
+                        releaseProfile(id , data.name).then(()=>{
+                            getProfiles(id).then((data)=>{
+                                io.to(sessions[id].socketID).emit("ProfileSelect" , data);
+                                sessions[id].queue[0].running = false;
+                                console.log("1");
+                            })
+                        },()=>{
+                            getProfiles(id).then((data)=>{
+                                io.to(sessions[id].socketID).emit("ProfileSelect" , data);
+                                sessions[id].queue[0].running = false;
+                                console.log("2");
+                            })
+                        })
+                        break;
+                
+                    default:
+                        break;
+                }
+                console.log(data);
+            }else if(sessions[id].queue[0].running == true  && sessions[id].queue[0].type == "ProfileSelect"){
+                io.to(sessions[id].socketID).emit("ProfileSelect", {aprofiles:[],sprofiles:sessions[id].profiles});
+            }
+        }
+    });
+
+    client.on("alive" , ()=>{
+        let id = cookie.parse(client.handshake.headers.cookie).id;
+        if(typeof(id) != "undefined" && typeof(sessions[id]) != "undefined"){
+            sessions[id].lastseen = new Date().getTime();
+        }
+    })
 })
+
+
+//check inactive
+setInterval(async function(){
+    let ids = Object.keys(sessions);
+
+    for (let i = 0; i < ids.length; i++) {
+        let id = ids[i];
+        if(new Date().getTime() - sessions[id].lastseen > 600000){
+            try{
+                await sessions[id].page.waitForSelector("button[aria-label='Exit']", { timeout: 3000 });
+                await sessions[id].page.click("button[aria-label='Exit']");
+            }catch{}
+            sessions[id].vbrowser.close();
+            delete sessions[id];
+        }   
+    }
+}, 60000);
