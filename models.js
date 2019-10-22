@@ -1,0 +1,7 @@
+
+function Session(params) {
+    
+    return {
+        
+    }
+}

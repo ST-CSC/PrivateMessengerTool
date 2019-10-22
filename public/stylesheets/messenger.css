@@ -68,7 +68,7 @@ h3 {
   border-bottom: none;
 }
 .box.height-control .box-body {
-  max-height: 300px;
+  max-height: 80vh;
   overflow: auto;
 }
 .box .border-right {
@@ -307,7 +307,7 @@ h3 {
   -o-transform: translate(0,  0);
   transform: translate(0,  0);
   padding: 10px;
-  height: 250px;
+  max-height: 80vh;
   overflow: auto;
 }
 .direct-chat-msg, .direct-chat-text {
@@ -407,46 +407,7 @@ h3 {
   color: #fff;
   overflow: auto;
 }
-.contacts-list>li {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-  padding: 10px;
-  margin: 0;
-}
-.contacts-list>li:before, .contacts-list>li:after {
-  content: " ";
-  display: table;
-}
-.contacts-list>li:after {
-  clear: both;
-}
-.contacts-list>li:last-of-type {
-  border-bottom: none;
-}
-.contacts-list-img {
-  border-radius: 50%;
-  width: 40px;
-  float: left;
-}
-.contacts-list-info {
-  margin-left: 45px;
-  color: #fff;
-}
-.contacts-list-name, .contacts-list-status {
-  display: block;
-}
-.contacts-list-name {
-  font-weight: 600;
-}
-.contacts-list-status {
-  font-size: 12px;
-}
-.contacts-list-date {
-  color: #aaa;
-  font-weight: normal;
-}
-.contacts-list-msg {
-  color: #999;
-}
+
 .direct-chat-danger .right>.direct-chat-text {
   background: #dd4b39;
   border-color: #dd4b39;

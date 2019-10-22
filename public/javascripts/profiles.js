@@ -7,6 +7,12 @@ socket.on('connect', () => {
         socket.emit("alive");
     }, 6000);
 });
+let texts = [
+    document.querySelector("#text-p1"),
+    document.querySelector("#text-p2"),
+    document.querySelector("#text-p3"),
+    document.querySelector("#text-p4")
+]
 let select = [
     document.querySelector("#profile1"),
     document.querySelector("#profile2"),
@@ -75,7 +81,24 @@ let buttonaction = (e)=>{
         select[i].disabled = true;              
     }
 }
+function gonext(){
+    let ok = [];
+    select.forEach((profile , i) => {
+        if(profile.value != '0'){
+            if(texts[i].value.length > 30){
+                ok.push(true)
+            }else{
+                ok.push(false)
+            }
+        }    
+    });
+    if(!ok.includes(false)){
+        window.location.replace(origin+"/test")
+    }else{
+        alert("hello")
+    }
 
+}
 
 
 

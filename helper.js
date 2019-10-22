@@ -38,5 +38,26 @@ function Session(username , userid){
     ];
 
 }
+
+
+// function Session(username , userid){
+//     this.user = {
+//         username : username,
+//         userid : userid
+//     };
+//     this.selectedpin = {
+//         pin : null,
+//         pinid : null,
+//         pinpass: null
+//     }
+//     this.lastseen = new Date().getTime();
+//     this.socketID = null;
+    
+//     this.profiles = []
+//     this.queue = [
+        
+//     ];
+
+// }
 exports.makeid = makeid ;
 exports.Session = Session ; 
